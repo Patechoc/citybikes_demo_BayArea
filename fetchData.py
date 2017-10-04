@@ -4,7 +4,9 @@
 import sys
 import time
 import os
-import urllib, urllib2
+import urllib
+import urllib.request as urllib2
+import wget
 import zipfile
 #from StringIO import StringIO
 
@@ -19,14 +21,14 @@ def download_file_by_url(url, path_to_file, toPrint=False, overwrite=False):
     directory = path_to_file
     if not os.path.exists(directory):
         os.makedirs(directory)
-    site = urllib.urlopen(url)
+    site = urllib2.urlopen(url)
     meta = site.info()
     file_name = url.split('/')[-1]
     file_nameBase = file_name.split('.')[0]
 
     if os.path.isfile(os.path.join(directory, file_nameBase, file_name)) and overwrite==False:
         if toPrint == True:
-            print os.path.join(directory, file_nameBase, file_name), " already present"
+            print(os.path.join(directory, file_nameBase, file_name), " already present")
         return (file_name, os.path.join(directory, file_nameBase))
 
     if not os.path.exists(os.path.join(directory, file_nameBase)):
@@ -34,7 +36,7 @@ def download_file_by_url(url, path_to_file, toPrint=False, overwrite=False):
 
     f = open(os.path.join(directory, file_nameBase, file_name), 'wb')
     try:
-        file_size = int(meta.getheaders("Content-Length")[0])
+        file_size = int(site.getheader("Content-Length"))
     except IndexError:
         response = urllib2.urlopen(url)
         html = response.read()
@@ -45,7 +47,7 @@ def download_file_by_url(url, path_to_file, toPrint=False, overwrite=False):
     #f = open(file_name, 'wb')
 
 
-    print "Downloading: %s Bytes: %s" % (file_name, file_size)
+    print("Downloading: %s Bytes: %s" % (file_name, file_size))
     widgets = [Bar('>'), ' ', ETA(), ' ', ReverseBar('<')]
     pbar = ProgressBar(widgets=widgets, maxval=file_size).start()
 
@@ -65,20 +67,9 @@ def download_file_by_url(url, path_to_file, toPrint=False, overwrite=False):
     f.close()
     return (file_name, os.path.join(directory, file_nameBase))
 
-
-
 def unzip_file(filename, path_to_file, toPrint=False):
-    fh = open(os.path.join(path_to_file, filename), 'r')
-    z = zipfile.ZipFile(fh)
-    for name in z.namelist():
-        if os.path.isfile(os.path.join(path_to_file, name)):
-            if toPrint == True:
-                print os.path.join(path_to_file, name), " already present"
-            continue
-        z.extract(name, path_to_file)
-    fh.close()
-    return 0
-
+    with zipfile.ZipFile(os.path.join(path_to_file, filename)) as zf:
+        zf.extractall(path=path_to_file)
 
 def main():
     directory = "data/"

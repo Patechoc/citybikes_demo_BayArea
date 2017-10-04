@@ -4,7 +4,8 @@ import pandas as pd
 from geopy.distance import vincenty
 from geopy.geocoders import Nominatim
 #from pyzipcode import ZipCodeDatabase
-import urllib2
+from uszipcode import ZipcodeSearchEngine
+import urllib.request as urllib2
 import json
 import numpy as np
 

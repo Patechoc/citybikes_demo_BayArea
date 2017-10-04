@@ -189,13 +189,13 @@ def get_station_longitude(stationName, stationData):
 def get_station_coordinates(stationName, stationData):
     return (get_station_latitude(stationName, stationData), get_station_longitude(stationName, stationData))
 
-def get_neighbouring_stationIDs(stationData, stationName, radius=0.5, unit = 'kilometer', filename= "data/distanceMatrix.csv"):
+def get_neighbouring_stationIDs(stationData, stationName, radius=0.5, unit = 'kilometer', filename= "distanceMatrix.csv"):
     ## Build a distance matrix from the stations' coordinates. Get the IDs of the station nearby.
     import distanceMatrix
-    if not os.path.exists("data/distanceMatrix.csv"):
+    if not os.path.exists("distanceMatrix.csv"):
         distMatrix = distanceMatrix.build_geoPy_distanceMatrix(stationData, unit, filename)
     else:
-        distMatrix = pd.read_csv('data/distanceMatrix.csv')
+        distMatrix = pd.read_csv('distanceMatrix.csv')
     #print distMatrix.columns
     stationID = get_stationID(stationName, stationData)
     neighboursIDs = distanceMatrix.find_neigbouring_stations(stationID, distMatrix, radius, unit="kilometer")
