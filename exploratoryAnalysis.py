@@ -22,7 +22,7 @@ def read_dataTrips_from_csv_files(paths, asUTC=True):
         # End Date: end date of trip with date and time, in PST (Pacific Standard Time)
         search = path + "/2*_trip_data.csv"
         allFiles.extend(glob.glob(search))
-    #print "Search for trip files here:\n", allFiles
+    #print("Search for trip files here:\n", allFiles)
     ''' Concatenate all data into one DataFrame '''
     dfData = pd.DataFrame()
     list_ = []
@@ -48,7 +48,7 @@ def read_dataWeather_from_csv_files(paths):
     for path in paths:
         search = path + "/2*weather_data.csv"
         allFiles.extend(glob.glob(search))
-    #print "Search for files here:\n", allFiles
+    #print("Search for files here:\n", allFiles)
     ''' Concatenate all data into one DataFrame '''
     dfData = pd.DataFrame()
     df = pd.DataFrame()
@@ -141,9 +141,9 @@ def splitByStationStarts(df):
         obj['nameStartStation'] = nameStation
         obj['data'] = df[df['Start Station'] == nameStation]
         hotRoutesDicts.append(obj)
-    #print listStations
-    #print "nameStartStation: ", hotRoutesDicts[0]['nameStartStation']
-    #print "Data about trips leaving from this station: ", hotRoutesDicts[0]['data'][0:3]
+    #print(listStations)
+    #print("nameStartStation: ", hotRoutesDicts[0]['nameStartStation'])
+    #print("Data about trips leaving from this station: ", hotRoutesDicts[0]['data'][0:3])
     return (hotRoutesDicts, listStations)
 
 
@@ -196,12 +196,12 @@ def get_neighbouring_stationIDs(stationData, stationName, radius=0.5, unit = 'ki
         distMatrix = distanceMatrix.build_geoPy_distanceMatrix(stationData, unit, filename)
     else:
         distMatrix = pd.read_csv('distanceMatrix.csv')
-    #print distMatrix.columns
+    #print(distMatrix.columns)
     stationID = get_stationID(stationName, stationData)
     neighboursIDs = distanceMatrix.find_neigbouring_stations(stationID, distMatrix, radius, unit="kilometer")
     return neighboursIDs
 
-def get_weatherInfos(weatherData, stationData, stationName):
+def get_weatherInfos_py27(weatherData, stationData, stationName):
     ## find weather available at the station zipcode, if not available in data, find weather at the closest zipcode(s) nearby
     from geopy.geocoders import Nominatim
     from pyzipcode import ZipCodeDatabase
@@ -210,19 +210,51 @@ def get_weatherInfos(weatherData, stationData, stationName):
     location = geolocator.reverse( (lat,lon) )
     #print("Address station from coordinates: "+location.address)
     zipcode = location.raw['address']['postcode']
-    #print "Station post code: ", zipcode
+    #print("Station post code: ", zipcode)
     zcDB = ZipCodeDatabase()
 
     stationWeather = pd.DataFrame()
     radius = 0    
     while radius < 10 and stationWeather.shape[0] == 0:
         zipNearby = [int(z.zip) for z in zcDB.get_zipcodes_around_radius(zipcode, radius)]
-        #print zipNearby
+        #print(zipNearby)
         stationWeather = weatherData[weatherData['Zip'].isin(zipNearby)]
-        #print "radius: ", radius
+        #print("radius: ", radius)
         radius += 0.05  ## ?? 50m?, 0.05 miles?
-    #print "post codes of neighborhood: ", zipNearby
-        
+    #print("post codes of neighborhood: ", zipNearby)
+    def fixPrecip(x):
+        try:
+            return float(x)
+        except:
+            return 0.005 # maybe 0.01 or something?    
+    precipitation_inch = stationWeather[u'PrecipitationIn'].apply(fixPrecip)
+    temperature_fahrenheit = stationWeather[u'Mean TemperatureF']
+    temperature_celcius = (temperature_fahrenheit -32.)/ 1.8
+    precipitation_mm =  25.4 * precipitation_inch ## in millimeters
+    #sfPrecipitation.max() #[sfPrecipitation != 0.0]
+    #sfTemp.head
+    return (precipitation_mm, temperature_celcius)
+
+
+def get_weatherInfos(weatherData, stationData, stationName):
+    ## find weather available at the station zipcode, if not available in data, find weather at the closest zipcode(s) nearby
+    from geopy.geocoders import Nominatim
+    from uszipcode import ZipcodeSearchEngine
+    geolocator = Nominatim()
+    (lat, lon) = get_station_coordinates(stationName, stationData)
+    location = geolocator.reverse( (lat,lon) )
+    zipcode = location.raw['address']['postcode']
+    search = ZipcodeSearchEngine()
+    zipcode_infos = search.by_zipcode(zipcode)
+    stationWeather = pd.DataFrame()
+    radius = 0    
+    while radius < 10 and stationWeather.shape[0] == 0:
+        zipNearby = [int(z.Zipcode) for z in search.by_coordinate(lat, lon,
+                                                                  radius=radius, returns=5)]
+        stationWeather = weatherData[weatherData['Zip'].isin(zipNearby)]
+        #print("radius: ", radius)
+        radius += 0.05  ## ?? 50m?, 0.05 miles?
+    print("post codes of neighborhood: ", zipNearby)
     def fixPrecip(x):
         try:
             return float(x)
@@ -246,14 +278,14 @@ def get_docksBikes_available_neighbour_Stations(stationID, docksData, radius=0.7
     else:
         distMatrix = pd.read_csv('data/distanceMatrix.csv')
     neighboursIDs = distanceMatrix.find_neigbouring_stations(stationID, distMatrix, radius, unit)
-    #print neighboursIDs
-    #print type(distMatrix)
-    #print distMatrix.columns
-    #print distMatrix.head()
+    #print(neighboursIDs)
+    #print(type(distMatrix))
+    #print(distMatrix.columns)
+    #print(distMatrix.head())
     neighbourStatus = []
     status = {}
     status['stationID'] = stationID
-    #print "stationID:", stationID
+    #print("stationID:", stationID)
     for sID in neighboursIDs:
         statusNeighbour = {}
         ## Docks available at the station ("Market at Sansome"), ready to be filled
@@ -264,8 +296,8 @@ def get_docksBikes_available_neighbour_Stations(stationID, docksData, radius=0.7
         statusNeighbour['BikeStatus'] = BikeStatus
         statusNeighbour['stationID']  = sID
         statusNeighbour['distToMainStation']  = distMatrix[(distMatrix[u'orig_station_id'] == stationID) & (distMatrix[u'dest_station_id'] == sID)]['distance'].tolist()[0]
-        #print "sID:", sID
-        #print "statusNeighbour['distToMainStation']:", statusNeighbour['distToMainStation']
+        #print("sID:", sID)
+        #print("statusNeighbour['distToMainStation']:", statusNeighbour['distToMainStation'])
         neighbourStatus.append(statusNeighbour)
     return neighbourStatus
 
@@ -350,7 +382,7 @@ def main():
         #r'data/babs_open_data_year_2'
     ]
     #weatherData = read_dataWeather_from_csv_files(paths=paths)
-    #print weatherData.columns.tolist()
+    #print(weatherData.columns.tolist())
     t0 = timer()
     docksData1a = read_dataDocks_from_csv_files(['data/babs_open_data_year_1/201402_babs_open_data/'])
     t1 = timer()
