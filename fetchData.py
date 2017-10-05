@@ -68,8 +68,10 @@ def download_file_by_url(url, path_to_file, toPrint=False, overwrite=False):
     return (file_name, os.path.join(directory, file_nameBase))
 
 def unzip_file(filename, path_to_file, toPrint=False):
-    with zipfile.ZipFile(os.path.join(path_to_file, filename)) as zf:
-        zf.extractall(path=path_to_file)
+    if os.path.isfile(os.path.join(path_to_file, filename)):
+        with zipfile.ZipFile(os.path.join(path_to_file, filename)) as zf:
+            zf.extractall(path=path_to_file)
+            
 
 def main():
     directory = "data/"

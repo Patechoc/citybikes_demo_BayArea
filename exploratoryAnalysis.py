@@ -13,7 +13,7 @@ import glob
 from datetime import datetime, date
 import pytz
 from pytz import timezone
-
+import dill as pickle
 
 def read_dataTrips_from_csv_files(paths, asUTC=True):
     allFiles = []
@@ -324,6 +324,20 @@ def build_model_inputs(inputs, weatherInfos={}): #setCumulTrips, freq_hour, with
     # X.shape # (2187, 7) 2187 samples, 7 features
     y = np.array(dataInCropped[:len(X)])
     return (X,y)
+
+
+def read_or_store_object(variableName, outputDir, fun, *args, **kwargs):
+    outputFilename = os.path.join(outputDir, variableName + '.pkl')
+    if os.path.isfile(outputFilename):
+        with open(outputFilename, 'rb') as file:
+            return pickle.load(file)
+    else:
+        if not os.path.exists(outputDir):
+            os.makedirs(outputDir)
+        with open(outputFilename, 'wb') as file:
+            myObj = fun(*args, **kwargs)
+            pickle.dump(myObj, file)
+    return myObj
 
 
 def main():
