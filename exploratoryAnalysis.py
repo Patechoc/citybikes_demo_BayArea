@@ -306,7 +306,7 @@ This generates X and y to use as input of our models
 ## X : TRAINING DATA = numpy array or sparse matrix of shape [n_samples,n_features]
 ## y : TARGET VALUES = numpy array of shape [n_samples, n_targets]
 '''
-def build_model_inputs(inputs, weatherInfos={}): #setCumulTrips, freq_hour, withWeather=True, watch_neighbour=True,
+def build_modelInputs(inputs, weatherInfos={}): #setCumulTrips, freq_hour, withWeather=True, watch_neighbour=True,
                        #supply_demand='supply', checkDockAvailable=True, checkBikeAvailable=True):
     dataIn = inputs['data']
     ## the first date used from input has to be shifted by the biggest offset in order to get the right data
@@ -322,41 +322,41 @@ def build_model_inputs(inputs, weatherInfos={}): #setCumulTrips, freq_hour, with
     earliestTime = dataIn.index[0] + offsetsTrip[-1] #Timestamp('2013-08-29 12:00:00', offset='H') + 28 days
     dataInCropped = dataIn[earliestTime:]
     dataDelayed  = [dataIn[earliestTime-i:] for i in offsetsTrip]
-
     if 'withWeather' not in inputs.keys() or inputs['withWeather'] == True:
         precip = [weatherInfos['precipitation_mm'][weatherInfos['precipitation_mm'].index.asof(str(i))] for i in dataInCropped.index]
-        dataDelayed.append(precip)
+        dataDelayed.append(pd.Series(precip))
         temper = [weatherInfos['temperature_celcius'][weatherInfos['temperature_celcius'].index.asof(str(i))] for i in dataInCropped.index]
-        dataDelayed.append(temper)
-
-#     if inputs['supply_demand'] == 'supply':
-#         if 'checkDockAvailable' not in inputs.keys() or inputs['checkDockAvailable'] == True:
-#             dockAvail = [stationDockStatus[stationDockStatus.index.asof(str(i.to_datetime()).replace('-', '/'))] for i in dataInCropped.index]
-#             dataDelayed.append(dockAvail)
-#         if 'watch_neighbour' in inputs.keys() and inputs['watch_neighbour'] == True: # watch if docks of neighbour are full
-#             (neighbourDockStatus, neighbourBikeStatus) = get_docksBikes_available_neighbour_Stations(stationID, radius=0.7, unit='kilometer')
-#             sID = neighbourDockStatus.keys()
-#             for s in sID:
-#                 docksAround = [neighbourDockStatus[s][neighbourDockStatus[s].index.asof(str(i.to_datetime()).replace('-', '/'))] for i in setCumulTrips.index]
-#                 countsDelayed.append(docksAround)
-#     elif inputs['supply_demand'] == 'demand':
-#         if 'checkBikeAvailable' not in inputs.keys() or inputs['checkBikeAvailable'] == True:
-#             dockAvail = [stationDockStatus[stationDockStatus.index.asof(str(i.to_datetime()).replace('-', '/'))] for i in dataInCropped.index]
-#             dataDelayed.append(dockAvail)
-#         if 'watch_neighbour' in inputs.keys() and inputs['watch_neighbour'] == True: # watch if docks of neighbour are full
-#             (neighbourDockStatus, neighbourBikeStatus) = get_docksBikes_available_neighbour_Stations(stationID, radius=0.7, unit='kilometer')
-#             sID = neighbourDockStatus.keys()
-#             for s in sID:
-#                 bikesAround = [neighbourDockStatus[s][neighbourDockStatus[s].index.asof(str(i.to_datetime()).replace('-', '/'))] for i in dataInCropped.index]
-#                 countsDelayed.append(bikesAround)
-
-    countsZipped = zip(*(dataDelayed))
-    X = np.array(countsZipped)
-    # array of arrays with the 7 time shift for a given time sample
-    # X.shape # (2187, 7) 2187 samples, 7 features
+        dataDelayed.append(pd.Series(temper))
+    
+    #     if inputs['supply_demand'] == 'supply':
+    #         if 'checkDockAvailable' not in inputs.keys() or inputs['checkDockAvailable'] == True:
+    #             dockAvail = [stationDockStatus[stationDockStatus.index.asof(str(i.to_datetime()).replace('-', '/'))] for i in dataInCropped.index]
+    #             dataDelayed.append(dockAvail)
+    #         if 'watch_neighbour' in inputs.keys() and inputs['watch_neighbour'] == True: # watch if docks of neighbour are full
+    #             (neighbourDockStatus, neighbourBikeStatus) = get_docksBikes_available_neighbour_Stations(stationID, radius=0.7, unit='kilometer')
+    #             sID = neighbourDockStatus.keys()
+    #             for s in sID:
+    #                 docksAround = [neighbourDockStatus[s][neighbourDockStatus[s].index.asof(str(i.to_datetime()).replace('-', '/'))] for i in setCumulTrips.index]
+    #                 countsDelayed.append(docksAround)
+    #     elif inputs['supply_demand'] == 'demand':
+    #         if 'checkBikeAvailable' not in inputs.keys() or inputs['checkBikeAvailable'] == True:
+    #             dockAvail = [stationDockStatus[stationDockStatus.index.asof(str(i.to_datetime()).replace('-', '/'))] for i in dataInCropped.index]
+    #             dataDelayed.append(dockAvail)
+    #         if 'watch_neighbour' in inputs.keys() and inputs['watch_neighbour'] == True: # watch if docks of neighbour are full
+    #             (neighbourDockStatus, neighbourBikeStatus) = get_docksBikes_available_neighbour_Stations(stationID, radius=0.7, unit='kilometer')
+    #             sID = neighbourDockStatus.keys()
+    #             for s in sID:
+    #                 bikesAround = [neighbourDockStatus[s][neighbourDockStatus[s].index.asof(str(i.to_datetime()).replace('-', '/'))] for i in dataInCropped.index]
+    #                 countsDelayed.append(bikesAround)
+    
+    ## build a list of tuples 
+    countsZipped = zip(*dataDelayed)
+    X = np.array(list(countsZipped))
+    ## array of arrays with the 7 time shift for a given time sample
+    ## X.shape # (2187, 7) 2187 samples, 7 features
     y = np.array(dataInCropped[:len(X)])
     return (X,y)
-
+    #return (X, dataInCropped)
 
 def read_or_store_object(variableName, outputDir, fun, *args, **kwargs):
     outputFilename = os.path.join(outputDir, variableName + '.pkl')
