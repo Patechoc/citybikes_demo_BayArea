@@ -2,29 +2,31 @@
 
 Example of a time-series prediction.
 
+
 ## Installation
 
-### Installation with pip
+Clone the repository:
 
 ```shell
 $ git clone https://github.com/Patechoc/citybikes_demo_BayArea.git
 $ cd citybikes_demo_BayArea
+```
+
+Then you can either us  [`Anaconda`](#installation-with-conda) or [`pip`](#installation-with-pip) to install your Python environment with the right packages:
+
+### Installation with pip
+
+```shell
 $ virtualenv myEnv
 $ source myEnv/bin/activate
-
+$ pip install -r pip_requirements.txt
 ```
 
 ### Installation with conda
 
 ```shell
-$ conda create -n citybikes_py36 python=3.6
-$ source activate citybikes_py36
-(citybikes_py36) $ python --version
-Python 3.6.3
-(citybikes_py36) $ conda install -y jupyter numpy pandas pytz dill progressbar2 geopy scipy bokeh
-(citybikes_py36) $ pip install wget uszipcode sklearn
+$ conda create -n citybikes_py36 python=3.6 --file conda_requirements.txt
 ``` 
-
 
 
 ## Run the notebook
